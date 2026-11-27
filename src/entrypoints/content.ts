@@ -1,4 +1,4 @@
-import { createPicker, pageContext } from '@/features/selection/picker';
+import { createPicker } from '@/features/selection/picker';
 import type { FromPage, ToPage } from '@/lib/messages';
 
 export default defineContentScript({
@@ -11,7 +11,6 @@ export default defineContentScript({
 
     const picker = createPicker((m: FromPage) => void browser.runtime.sendMessage(m));
     browser.runtime.onMessage.addListener((m: ToPage, _sender, reply) => {
-      if (m.type === 'pinpoint:page-context') return void reply(pageContext());
       if (m.type === 'pinpoint:select-start') picker.start();
       if (m.type === 'pinpoint:select-stop') picker.stop();
       reply(true); // ack, so the side panel knows the script is here

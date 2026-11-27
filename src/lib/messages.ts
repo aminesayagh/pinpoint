@@ -1,6 +1,8 @@
+import type { ViewportRect } from '@/features/selection/crop';
+
 // Messages between the side panel (owns sessions and storage) and the content script (the page).
 
-/** What the page knows at capture time. Element fields are absent for a page-level comment. */
+/** What the page knows about the selected element at capture time. */
 export interface PageContext {
   page_url: string;
   page_title?: string;
@@ -17,14 +19,13 @@ export interface PageContext {
 
 /** Side panel → content script. */
 export type ToPage =
-  | { type: 'pinpoint:select-start' }
-  | { type: 'pinpoint:select-stop' }
-  | { type: 'pinpoint:page-context' }
-  | { type: 'pinpoint:ping' };
+  { type: 'pinpoint:select-start' } | { type: 'pinpoint:select-stop' } | { type: 'pinpoint:ping' };
 
 /** Content script → side panel. */
 export type FromPage =
-  { type: 'pinpoint:selected'; context: PageContext } | { type: 'pinpoint:select-cancelled' };
+  /** `rect`: the element in the viewport (CSS px) when the page is ready for the screenshot. */
+  | { type: 'pinpoint:selected'; context: PageContext; rect: ViewportRect }
+  | { type: 'pinpoint:select-cancelled' };
 
 /** Background → side panel, for the keyboard shortcut. */
 export type FromBackground = { type: 'pinpoint:shortcut-select' };

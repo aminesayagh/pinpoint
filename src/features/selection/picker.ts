@@ -30,7 +30,6 @@ export function createPicker(send: (m: FromPage) => void) {
   let host: HTMLElement | undefined;
   let box: HTMLElement;
   let label: HTMLElement;
-  let hint: HTMLElement;
   let current: Element | undefined;
   let downStack: Element[] = []; // children left when moving up, for ↓
   let frozen = false; // selected, waiting for the side panel to take the screenshot
@@ -48,7 +47,6 @@ export function createPicker(send: (m: FromPage) => void) {
       <style>
         .box { position: fixed; border: 2px solid #2563eb; background: rgb(37 99 235 / 0.12);
                border-radius: 3px; box-sizing: border-box; transition: all 60ms ease-out; display: none; }
-        .box.selected { border-color: #dc2626; background: rgb(220 38 38 / 0.10); }
         .label, .hint { position: fixed; font: 12px/1.4 system-ui, sans-serif; color: white;
                background: #1e293b; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
         .hint { bottom: 12px; left: 50%; transform: translateX(-50%); padding: 6px 10px; }
@@ -56,7 +54,6 @@ export function createPicker(send: (m: FromPage) => void) {
       <div class="box"></div><div class="label"></div><div class="hint">${HINT}</div>`;
     box = root.querySelector('.box')!;
     label = root.querySelector('.label')!;
-    hint = root.querySelector('.hint')!;
     document.documentElement.append(host);
     host.showPopover?.();
   }
@@ -100,17 +97,29 @@ export function createPicker(send: (m: FromPage) => void) {
 
   function onClick(e: MouseEvent) {
     swallow(e);
-    if (frozen) return;
-    current ??= target(e);
-    if (!current) return;
+    if (frozen || !(current ??= target(e))) return;
     frozen = true;
-    box.classList.add('selected');
-    label.style.display = 'none';
-    hint.style.display = 'none';
-    // Let the hint disappear from the screen before the side panel takes the screenshot.
+    const el = current;
+    // The screenshot shows the element only: bring it fully on screen when it fits, and hide
+    // Pinpoint's own highlight so the image is the page as it looks.
+    const r = el.getBoundingClientRect();
+    const fits = r.width <= window.innerWidth && r.height <= window.innerHeight;
+    const cut =
+      r.top < 0 || r.left < 0 || r.bottom > window.innerHeight || r.right > window.innerWidth;
+    if (fits && cut) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    host!.style.display = 'none';
+    // The screenshot is the last frame Chrome displayed: wait until the hidden overlay (and the
+    // scroll) were painted and shown. Two frames are not always enough, hence the short delay.
     requestAnimationFrame(() =>
       requestAnimationFrame(() =>
-        send({ type: 'pinpoint:selected', context: pageContext(current) }),
+        setTimeout(() => {
+          const { x, y, width, height } = el.getBoundingClientRect();
+          send({
+            type: 'pinpoint:selected',
+            context: pageContext(el),
+            rect: { x, y, width, height },
+          });
+        }, 100),
       ),
     );
   }
