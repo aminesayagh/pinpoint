@@ -8,6 +8,8 @@ export interface Settings {
   default_linear_project_id?: string;
   default_linear_priority?: number; // 0 none, 1 urgent … 4 low
   default_linear_label_ids?: string[];
+  /** Sites the reviewer allowed, as match patterns (`http://localhost/*`). See lib/sites.ts. */
+  allowed_sites?: string[];
 }
 
 export async function getSettings(): Promise<Settings> {

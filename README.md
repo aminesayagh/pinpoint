@@ -43,4 +43,11 @@ not a secure vault: a public release would need OAuth instead.
 | `sidePanel`, `storage`, `unlimitedStorage` | The panel UI, settings, and drafts with screenshots |
 | `tabs`, `scripting` | Know which site the current tab shows; load the selection script there |
 | `api.linear.app`, `storage.googleapis.com` | Linear's API, and the host Linear signs screenshot uploads for |
-| Review sites (optional) | Asked one site at a time with **Allow** in the panel, localhost included. Never "all websites" at install |
+| All websites (optional) | Asked once, on the first **Allow** in the panel: Chrome only allows screenshots with it. Pinpoint keeps its own list of allowed sites and only runs there; **Remove access** takes a site off the list |
+| `Alt+Shift+S` | Opens the panel and starts selecting an element |
+
+## Demo page
+
+`demo/index.html` is a small fake shop with deliberate flaws (a typo, a badly wrapping name, a
+modal popup) to try Pinpoint on: `python3 -m http.server 8123 -d demo`, then open
+http://localhost:8123.

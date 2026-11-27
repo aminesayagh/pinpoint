@@ -11,8 +11,15 @@ export default defineConfig({
     permissions: ['sidePanel', 'storage', 'unlimitedStorage', 'scripting', 'tabs'],
     // Linear API, and the storage host Linear signs screenshot uploads for.
     host_permissions: ['https://api.linear.app/*', 'https://storage.googleapis.com/*'],
-    // Review sites are asked for one at a time (lib/sites.ts).
-    optional_host_permissions: ['http://*/*', 'https://*/*'],
+    // Asked once, on the first Allow: screenshots need it. Pinpoint keeps its own list of
+    // allowed sites and only works there (lib/sites.ts).
+    optional_host_permissions: ['<all_urls>'],
     action: { default_title: 'Open Pinpoint' },
+    commands: {
+      'select-element': {
+        suggested_key: { default: 'Alt+Shift+S' },
+        description: 'Select an element to comment on',
+      },
+    },
   },
 });

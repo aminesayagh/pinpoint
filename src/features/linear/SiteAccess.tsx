@@ -23,10 +23,12 @@ export function SiteAccess() {
     check();
     browser.permissions.onAdded.addListener(check);
     browser.permissions.onRemoved.addListener(check);
+    browser.storage.local.onChanged.addListener(check);
     return () => {
       live = false;
       browser.permissions.onAdded.removeListener(check);
       browser.permissions.onRemoved.removeListener(check);
+      browser.storage.local.onChanged.removeListener(check);
     };
   }, [tab?.url]);
 

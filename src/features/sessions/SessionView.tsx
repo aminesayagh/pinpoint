@@ -10,6 +10,7 @@ import {
 } from '@/lib/db';
 import { useLive } from '@/lib/useLive';
 import { useDestination } from '@/features/linear/useDestination';
+import { Capture } from '@/features/selection/Capture';
 import { sessionName, STATUS_LABEL } from './SessionList';
 
 const STATUS_HELP: Record<SessionStatus, string> = {
@@ -103,6 +104,7 @@ export function SessionView({ id, onBack }: { id: string; onBack: () => void }) 
           {error}
         </p>
       )}
+      {s.status === 'active' && <Capture sessionId={id} />}
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold">Comments ({items.value?.length ?? 0})</h2>
         {items.value?.length ? (
