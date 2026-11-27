@@ -11,6 +11,7 @@ import {
 import { useLive } from '@/lib/useLive';
 import { useDestination } from '@/features/linear/useDestination';
 import { FeedbackList } from '@/features/feedback/FeedbackList';
+import { SendToLinear } from '@/features/linear/SendToLinear';
 import { Capture } from '@/features/selection/Capture';
 import { sessionName, STATUS_LABEL } from './SessionList';
 
@@ -106,6 +107,7 @@ export function SessionView({ id, onBack }: { id: string; onBack: () => void }) 
         </p>
       )}
       {s.status === 'active' && <Capture sessionId={id} />}
+      {items.value && <SendToLinear session={s} items={items.value} />}
       {items.value && <FeedbackList items={items.value} />}
     </div>
   );

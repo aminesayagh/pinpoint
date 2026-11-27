@@ -87,6 +87,12 @@ function Items({ items }: { items: FeedbackItem[] }) {
                   #{i.sequence_number} {titleOf(i)}
                 </button>
               )}
+              {(i.submission_status === 'failed' || i.submission_status === 'unknown') && (
+                <span className="block text-xs text-warning">
+                  {i.submission_status === 'failed' ? 'Not sent' : 'Not confirmed'}:{' '}
+                  {i.last_submission_error}
+                </span>
+              )}
               {i.linear_issue_url && (
                 <>
                   {' · '}
