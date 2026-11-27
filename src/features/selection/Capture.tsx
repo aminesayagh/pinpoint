@@ -5,7 +5,7 @@ import type { FromBackground, FromPage, PageContext, ToPage } from '@/lib/messag
 import { reachPage } from '@/lib/sites';
 import { cropScreenshot, type ViewportRect } from './crop';
 
-// One action in a session: Add comment = select an element, then write about it.
+// One action in a session: Add comment = drag a box on the page, then write about it.
 type State =
   | { step: 'idle'; saved?: boolean }
   | { step: 'selecting' }
@@ -13,7 +13,7 @@ type State =
 
 const toPage = (tabId: number, m: ToPage) => browser.tabs.sendMessage(tabId, m);
 
-/** The selected element, cut out of a screenshot of the tab as it is right now. */
+/** The selected area, cut out of a screenshot of the tab as it is right now. */
 async function elementShot(windowId: number, rect: ViewportRect, viewportWidth: number) {
   const dataUrl = await browser.tabs.captureVisibleTab(windowId, { format: 'png' });
   const page = await (await fetch(dataUrl)).blob();
@@ -98,7 +98,7 @@ export function Capture({ sessionId }: { sessionId: string }) {
     <section className="flex flex-col gap-2">
       {state.step === 'selecting' ? (
         <div className="flex items-center justify-between gap-2 rounded-lg bg-accent/10 px-3 py-2 text-sm">
-          <span>Click the element to comment on. ↑ ↓ change the level, Esc cancels.</span>
+          <span>Drag a box around what you want to comment on. Esc cancels.</span>
           <Button size="sm" variant="ghost" onPress={cancel}>
             Cancel
           </Button>
@@ -158,8 +158,8 @@ function CommentForm({
     >
       <p className="text-sm">
         <strong>
-          &lt;{c.element_tag}&gt;{c.element_text ? ` “${c.element_text.slice(0, 40)}”` : ''} ·{' '}
-          {c.element_width}×{c.element_height}
+          Area {c.element_width}×{c.element_height} in &lt;{c.element_tag}&gt;
+          {c.element_text ? ` “${c.element_text.slice(0, 40)}”` : ''}
         </strong>
         <br />
         <span className="text-xs text-muted">
@@ -174,7 +174,7 @@ function CommentForm({
       {shotUrl && (
         <img
           src={shotUrl}
-          alt="Screenshot of the selected element"
+          alt="Screenshot of the selected area"
           className="max-h-64 self-start rounded border border-default object-contain"
         />
       )}

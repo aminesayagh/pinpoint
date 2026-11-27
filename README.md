@@ -44,7 +44,7 @@ not a secure vault: a public release would need OAuth instead.
 | `tabs`, `scripting` | Know which site the current tab shows; load the selection script there |
 | `api.linear.app`, `storage.googleapis.com` | Linear's API, and the host Linear signs screenshot uploads for |
 | All websites (optional) | Asked once, on the first **Allow** in the panel: Chrome only allows screenshots with it. Pinpoint keeps its own list of allowed sites and only runs there; **Remove access** takes a site off the list |
-| `Alt+Shift+S` | Opens the panel and starts selecting an element |
+| `Alt+Shift+S` | Opens the panel and starts a comment (drag a box on the page) |
 
 ## Demo page
 

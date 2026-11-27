@@ -2,7 +2,10 @@ import type { ViewportRect } from '@/features/selection/crop';
 
 // Messages between the side panel (owns sessions and storage) and the content script (the page).
 
-/** What the page knows about the selected element at capture time. */
+/**
+ * What the page knows at capture time. element_x/y/width/height are the selected area (document
+ * coordinates); element_tag/text describe the smallest element containing it.
+ */
 export interface PageContext {
   page_url: string;
   page_title?: string;
@@ -23,7 +26,7 @@ export type ToPage =
 
 /** Content script → side panel. */
 export type FromPage =
-  /** `rect`: the element in the viewport (CSS px) when the page is ready for the screenshot. */
+  /** `rect`: the selected area in the viewport (CSS px), ready for the screenshot. */
   | { type: 'pinpoint:selected'; context: PageContext; rect: ViewportRect }
   | { type: 'pinpoint:select-cancelled' };
 
