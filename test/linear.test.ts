@@ -3,8 +3,8 @@ import { test } from 'node:test';
 import { gql, LinearError } from '../src/features/linear/api.ts';
 import { sitePattern } from '../src/lib/sites.ts';
 
-const answer = (status: number, body: unknown) => (async () =>
-  new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
+const answer = (status: number, body: unknown) =>
+  (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
 const kindOf = (fetchImpl: typeof fetch) =>
   gql('key', 'query { viewer { id } }', {}, fetchImpl).then(
     () => 'ok',
@@ -15,12 +15,16 @@ test('gql sorts failures by what they mean for a write', async () => {
   assert.equal(await kindOf(answer(200, { data: { viewer: { id: '1' } } })), 'ok');
   assert.equal(await kindOf(answer(401, {})), 'auth');
   assert.equal(
-    await kindOf(answer(400, { errors: [{ message: 'x', extensions: { type: 'authentication error' } }] })),
+    await kindOf(
+      answer(400, { errors: [{ message: 'x', extensions: { type: 'authentication error' } }] }),
+    ),
     'auth',
   );
   assert.equal(await kindOf(answer(400, { errors: [{ message: 'Invalid team' }] })), 'rejected');
   assert.equal(await kindOf(answer(503, { errors: [{ message: 'busy' }] })), 'server');
-  const offline = (async () => { throw new TypeError('Failed to fetch'); }) as unknown as typeof fetch;
+  const offline = (async () => {
+    throw new TypeError('Failed to fetch');
+  }) as unknown as typeof fetch;
   assert.equal(await kindOf(offline), 'network');
 });
 
