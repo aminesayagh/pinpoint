@@ -1,4 +1,5 @@
-import { Button, Input, Label, TextField } from '@heroui/react';
+import { Gear } from '@gravity-ui/icons';
+import { Button, ButtonGroup, Input, Label, TextField, Tooltip } from '@heroui/react';
 import { useState } from 'react';
 import { createSession, feedbackCounts, listSessions, type ReviewSession } from '@/lib/db';
 import { useSettings } from '@/lib/settings';
@@ -130,14 +131,21 @@ function NewSession({
         <Label>New review session</Label>
         <Input placeholder="Name (optional), e.g. Checkout on mobile" />
       </TextField>
-      <p className="text-xs text-muted">
-        Issues will go to <strong>{destination}</strong>.{' '}
-        <button type="button" className="underline" onClick={onSettings}>
-          Change
-        </button>
-      </p>
       {error && <p className="text-sm text-danger">{error}</p>}
-      <Button type="submit">Start session</Button>
+      <ButtonGroup className="self-start">
+        <Button type="submit">Start session</Button>
+        <Tooltip delay={300}>
+          <Button
+            isIconOnly
+            aria-label={`Change destination (now ${destination})`}
+            onPress={onSettings}
+          >
+            <ButtonGroup.Separator />
+            <Gear />
+          </Button>
+          <Tooltip.Content>Change destination · now {destination}</Tooltip.Content>
+        </Tooltip>
+      </ButtonGroup>
     </form>
   );
 }
