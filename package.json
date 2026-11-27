@@ -17,6 +17,7 @@
   },
   "packageManager": "pnpm@11.20.0",
   "dependencies": {
+    "@gravity-ui/icons": "^2.24.0",
     "@heroui/react": "^3.2.8",
     "@heroui/styles": "^3.2.8",
     "idb": "^8.0.4",

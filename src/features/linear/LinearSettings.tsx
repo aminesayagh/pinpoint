@@ -1,7 +1,16 @@
-import { Button, Description, Input, Label, TextField } from '@heroui/react';
+import { ArrowRightFromSquare } from '@gravity-ui/icons';
+import { Button, Description, Input, Label, TextField, Tooltip } from '@heroui/react';
 import { useEffect, useState } from 'react';
 import { saveSettings, useSettings, type Settings } from '@/lib/settings';
-import { getTeamOptions, getTeams, getViewer, LinearError, PRIORITIES, type Named, type Team } from './api';
+import {
+  getTeamOptions,
+  getTeams,
+  getViewer,
+  LinearError,
+  PRIORITIES,
+  type Named,
+  type Team,
+} from './api';
 
 const selectClass = 'w-full rounded-lg border border-default bg-surface px-2 py-1.5 text-sm';
 
@@ -39,9 +48,18 @@ export function LinearSettings() {
             'Connecting to Linear…'
           )}
         </p>
-        <Button size="sm" variant="ghost" onPress={() => saveSettings({ linear_api_key: undefined })}>
-          Disconnect
-        </Button>
+        <Tooltip delay={300}>
+          <Button
+            isIconOnly
+            size="sm"
+            variant="ghost"
+            aria-label="Disconnect Linear"
+            onPress={() => saveSettings({ linear_api_key: undefined })}
+          >
+            <ArrowRightFromSquare />
+          </Button>
+          <Tooltip.Content>Disconnect Linear</Tooltip.Content>
+        </Tooltip>
       </div>
       {viewer && <Destination apiKey={apiKey} settings={settings} teams={teams} />}
     </section>
@@ -78,7 +96,12 @@ function ConnectForm({ error }: { error?: LinearError }) {
         <Input placeholder="lin_api_…" autoComplete="off" />
         <Description>
           Create one in Linear under{' '}
-          <a className="underline" href="https://linear.app/settings/account/security" target="_blank" rel="noreferrer">
+          <a
+            className="underline"
+            href="https://linear.app/settings/account/security"
+            target="_blank"
+            rel="noreferrer"
+          >
             Settings → Security &amp; access
           </a>
           . It stays in this browser only.
@@ -96,7 +119,15 @@ function ConnectForm({ error }: { error?: LinearError }) {
   );
 }
 
-function Destination({ apiKey, settings, teams }: { apiKey: string; settings: Settings; teams: Team[] }) {
+function Destination({
+  apiKey,
+  settings,
+  teams,
+}: {
+  apiKey: string;
+  settings: Settings;
+  teams: Team[];
+}) {
   const teamId = settings.default_linear_team_id;
   const [options, setOptions] = useState<{ projects: Named[]; labels: Named[] }>();
   const [error, setError] = useState<string>();
@@ -113,7 +144,9 @@ function Destination({ apiKey, settings, teams }: { apiKey: string; settings: Se
   const labelIds = settings.default_linear_label_ids ?? [];
   const toggleLabel = (id: string) =>
     saveSettings({
-      default_linear_label_ids: labelIds.includes(id) ? labelIds.filter((l) => l !== id) : [...labelIds, id],
+      default_linear_label_ids: labelIds.includes(id)
+        ? labelIds.filter((l) => l !== id)
+        : [...labelIds, id],
     });
 
   return (
@@ -149,7 +182,9 @@ function Destination({ apiKey, settings, teams }: { apiKey: string; settings: Se
             <select
               className={selectClass}
               value={settings.default_linear_project_id ?? ''}
-              onChange={(e) => saveSettings({ default_linear_project_id: e.target.value || undefined })}
+              onChange={(e) =>
+                saveSettings({ default_linear_project_id: e.target.value || undefined })
+              }
             >
               <option value="">No project</option>
               {options.projects.map((p) => (
@@ -178,7 +213,11 @@ function Destination({ apiKey, settings, teams }: { apiKey: string; settings: Se
             <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
               {options.labels.map((l) => (
                 <label key={l.id} className="flex items-center gap-2">
-                  <input type="checkbox" checked={labelIds.includes(l.id)} onChange={() => toggleLabel(l.id)} />
+                  <input
+                    type="checkbox"
+                    checked={labelIds.includes(l.id)}
+                    onChange={() => toggleLabel(l.id)}
+                  />
                   {l.name}
                 </label>
               ))}

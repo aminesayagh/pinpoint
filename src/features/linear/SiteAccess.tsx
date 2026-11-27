@@ -1,6 +1,13 @@
-import { Button } from '@heroui/react';
+import { CircleXmark } from '@gravity-ui/icons';
+import { Button, Tooltip } from '@heroui/react';
 import { useEffect, useState } from 'react';
-import { hasSiteAccess, injectContentScript, removeSiteAccess, requestSiteAccess, sitePattern } from '@/lib/sites';
+import {
+  hasSiteAccess,
+  injectContentScript,
+  removeSiteAccess,
+  requestSiteAccess,
+  sitePattern,
+} from '@/lib/sites';
 import { useActiveTab } from '@/lib/useActiveTab';
 
 /** Shows whether Pinpoint may review the current tab's site, and asks for it. */
@@ -44,9 +51,18 @@ export function SiteAccess() {
             <strong>{host}</strong>: {allowed ? 'Pinpoint can review it' : 'not allowed yet'}
           </p>
           {allowed ? (
-            <Button size="sm" variant="ghost" onPress={() => void removeSiteAccess(tab?.url)}>
-              Remove access
-            </Button>
+            <Tooltip delay={300}>
+              <Button
+                isIconOnly
+                size="sm"
+                variant="ghost"
+                aria-label={`Remove access to ${host}`}
+                onPress={() => void removeSiteAccess(tab?.url)}
+              >
+                <CircleXmark />
+              </Button>
+              <Tooltip.Content>Remove access to {host}</Tooltip.Content>
+            </Tooltip>
           ) : (
             <Button size="sm" onPress={() => void allow()}>
               Allow
