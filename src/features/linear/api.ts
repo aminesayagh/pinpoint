@@ -43,12 +43,15 @@ export async function gql<T>(
   const authFailed =
     res.status === 401 ||
     errors.some(
-      (e) => /authentication/i.test(e.extensions?.type ?? '') || e.extensions?.code === 'AUTHENTICATION_ERROR',
+      (e) =>
+        /authentication/i.test(e.extensions?.type ?? '') ||
+        e.extensions?.code === 'AUTHENTICATION_ERROR',
     );
   if (authFailed) {
     throw new LinearError('Linear refused the API key. It may be wrong or revoked.', 'auth');
   }
-  if (res.status >= 500) throw new LinearError(`Linear had a server error (HTTP ${res.status}).`, 'server');
+  if (res.status >= 500)
+    throw new LinearError(`Linear had a server error (HTTP ${res.status}).`, 'server');
   if (errors.length) throw new LinearError(errors.map((e) => e.message).join('; '), 'rejected');
   if (!res.ok || !body?.data) {
     throw new LinearError(`Unexpected answer from Linear (HTTP ${res.status}).`, 'rejected');
@@ -77,7 +80,7 @@ export async function getTeams(apiKey: string) {
   return d.teams.nodes.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** Projects of a team, and the labels usable in it (workspace labels plus the team's own). */
+/** Projects of a team, and the labels usable in it: workspace and team labels, without label groups. */
 export async function getTeamOptions(apiKey: string, teamId: string) {
   const d = await gql<{
     team: { projects: { nodes: Named[] } };
@@ -86,7 +89,11 @@ export async function getTeamOptions(apiKey: string, teamId: string) {
     apiKey,
     `query($teamId: String!, $teamIdFilter: ID!) {
       team(id: $teamId) { projects(first: 100) { nodes { id name } } }
-      issueLabels(first: 250, filter: { or: [{ team: { null: true } }, { team: { id: { eq: $teamIdFilter } } }] }) {
+      issueLabels(
+        first: 250
+        # Group labels (like "Focus") only hold other labels; Linear refuses them on an issue.
+        filter: { isGroup: { eq: false }, or: [{ team: { null: true } }, { team: { id: { eq: $teamIdFilter } } }] }
+      ) {
         nodes { id name }
       }
     }`,

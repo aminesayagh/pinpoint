@@ -1,7 +1,7 @@
 import { ArrowRightFromSquare } from '@gravity-ui/icons';
 import { Button, Description, Input, Label, TextField, Tooltip } from '@heroui/react';
 import { useEffect, useState } from 'react';
-import { saveSettings, useSettings, type Settings } from '@/lib/settings';
+import { getSettings, saveSettings, useSettings, type Settings } from '@/lib/settings';
 import {
   getTeamOptions,
   getTeams,
@@ -136,7 +136,16 @@ function Destination({
     if (!teamId) return;
     let live = true;
     getTeamOptions(apiKey, teamId)
-      .then((o) => live && (setOptions(o), setError(undefined)))
+      .then(async (o) => {
+        if (!live) return;
+        setOptions(o);
+        setError(undefined);
+        // Forget saved labels that are no longer offered (e.g. a label group chosen earlier).
+        const saved = (await getSettings()).default_linear_label_ids ?? [];
+        const usable = saved.filter((id) => o.labels.some((l) => l.id === id));
+        if (usable.length !== saved.length)
+          await saveSettings({ default_linear_label_ids: usable });
+      })
       .catch((e: Error) => live && setError(e.message));
     return () => void (live = false);
   }, [apiKey, teamId]);
