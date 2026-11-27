@@ -51,5 +51,8 @@ export async function syncContentScript() {
 
 /** Injects the content script into an already open tab (registration only covers new loads). */
 export async function injectContentScript(tabId: number) {
-  await browser.scripting.executeScript({ target: { tabId }, files: ['/content-scripts/content.js'] });
+  await browser.scripting.executeScript({
+    target: { tabId },
+    files: ['/content-scripts/content.js'],
+  });
 }
