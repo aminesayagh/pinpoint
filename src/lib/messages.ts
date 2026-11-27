@@ -8,8 +8,12 @@ export interface PageContext {
   page_title?: string;
   viewport_width: number;
   viewport_height: number;
+  element_selector?: string;
   element_tag?: string;
+  /** Accessible name or visible text, short. */
   element_text?: string;
+  /** Opening tag only, safe attributes. */
+  element_html?: string;
   /** Document coordinates in CSS pixels, scroll included. */
   element_x?: number;
   element_y?: number;
