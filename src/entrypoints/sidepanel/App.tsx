@@ -1,10 +1,12 @@
-import { Button } from '@heroui/react';
+import { LinearSettings } from '@/features/linear/LinearSettings';
+import { SiteAccess } from '@/features/linear/SiteAccess';
 
 export default function App() {
   return (
-    <main className="p-4">
+    <main className="flex flex-col gap-6 p-4">
       <h1 className="text-lg font-semibold">Pinpoint</h1>
-      <Button onPress={() => console.log('ready')}>Ready</Button>
+      <LinearSettings />
+      <SiteAccess />
     </main>
   );
 }
