@@ -201,6 +201,13 @@ export async function sendBatch(
       });
     } catch (e) {
       const err = e as LinearError;
+      if (err.kind === 'rejected' && /already exists/i.test(err.message)) {
+        // The same id was created before (an earlier unclear attempt): pick up its link.
+        if ((await reconcile(apiKey, item, fetchImpl)) === 'created') {
+          result.created++;
+          continue;
+        }
+      }
       const unclear = err.kind === 'network' || err.kind === 'server';
       if (unclear) result.unknown++;
       else result.failed++;
@@ -213,4 +220,47 @@ export async function sendBatch(
   }
   onProgress?.(items.length, items.length);
   return result;
+}
+
+/**
+ * For a comment whose outcome is unclear: asks Linear whether its issue exists (same id).
+ * Found: it was created, keep the link. Not found: nothing was created, it can be sent again.
+ * No clear answer: it stays "not confirmed". Never creates anything itself.
+ */
+export async function reconcile(
+  apiKey: string,
+  item: FeedbackItem,
+  fetchImpl: typeof fetch = fetch,
+) {
+  try {
+    const d = await gql<{ issue: CreatedIssue | null }>(
+      apiKey,
+      'query($id: String!) { issue(id: $id) { id identifier url } }',
+      { id: item.id },
+      fetchImpl,
+    );
+    if (!d.issue) throw new LinearError('Entity not found', 'rejected');
+    await updateFeedback(item.id, {
+      submission_status: 'submitted',
+      linear_issue_id: d.issue.id,
+      linear_issue_identifier: d.issue.identifier,
+      linear_issue_url: d.issue.url,
+      last_submission_error: undefined,
+      submitted_at: item.submitted_at ?? new Date().toISOString(),
+    });
+    return 'created' as const;
+  } catch (e) {
+    const err = e as LinearError;
+    if (err.kind === 'rejected' && /not found/i.test(err.message)) {
+      await updateFeedback(item.id, {
+        submission_status: 'failed',
+        last_submission_error: 'Linear has no issue for it. It can be sent again.',
+      });
+      return 'missing' as const;
+    }
+    await updateFeedback(item.id, {
+      last_submission_error: `Still not confirmed: ${err.message}`,
+    });
+    return 'unclear' as const;
+  }
 }

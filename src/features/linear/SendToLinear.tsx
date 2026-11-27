@@ -5,11 +5,12 @@ import { useSettings } from '@/lib/settings';
 import { titleOf, toSend } from '@/features/feedback/issue';
 import { groupFeedback } from '@/features/feedback/organize';
 import { getTeamOptions, PRIORITIES } from './api';
-import { sendBatch, type BatchResult } from './submit';
+import { reconcile, sendBatch, type BatchResult } from './submit';
 import { useDestination } from './useDestination';
 
 type Step =
-  | { name: 'idle'; result?: BatchResult }
+  | { name: 'idle'; result?: BatchResult; checked?: string }
+  | { name: 'checking' }
   | { name: 'preview' }
   | { name: 'sending'; done: number; total: number };
 
@@ -69,6 +70,33 @@ export function SendToLinear({
       setError(`Sending stopped: ${(e as Error).message}`);
       setStep({ name: 'idle' });
     }
+  }
+
+  // Comments whose issue may or may not exist: asked about, never resent blindly.
+  const unsure = items.filter((i) => i.submission_status === 'unknown');
+  async function check() {
+    if (!apiKey) return;
+    setStep({ name: 'checking' });
+    const found = { created: 0, missing: 0, unclear: 0 };
+    for (const item of unsure) found[await reconcile(apiKey, item)]++;
+    setStep({
+      name: 'idle',
+      checked: [
+        found.created && `${found.created} found in Linear.`,
+        found.missing && `${found.missing} not in Linear, ready to send again.`,
+        found.unclear && `${found.unclear} still not confirmed.`,
+      ]
+        .filter(Boolean)
+        .join(' '),
+    });
+  }
+
+  if (step.name === 'checking') {
+    return (
+      <p role="status" className="text-sm">
+        Checking Linear…
+      </p>
+    );
   }
 
   if (step.name === 'sending') {
@@ -132,6 +160,15 @@ export function SendToLinear({
         ) : (
           <p className="text-muted">Connect Linear in Settings to send these comments.</p>
         ))}
+      {unsure.length > 0 && apiKey && (
+        <div className="flex items-center gap-2 text-warning">
+          <span>{unsure.length} not confirmed: the issue may exist.</span>
+          <Button size="sm" variant="secondary" onPress={() => void check()}>
+            Check in Linear
+          </Button>
+        </div>
+      )}
+      {step.checked && <p role="status">{step.checked}</p>}
       {r && (
         <p role="status" className={r.failed || r.unknown ? 'text-warning' : 'text-success'}>
           {[
