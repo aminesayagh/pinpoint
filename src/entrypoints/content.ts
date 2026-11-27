@@ -13,6 +13,8 @@ export default defineContentScript({
     browser.runtime.onMessage.addListener((m: ToPage, _sender, reply) => {
       if (m.type === 'pinpoint:select-start') picker.start();
       if (m.type === 'pinpoint:select-stop') picker.stop();
+      if (m.type === 'pinpoint:select-right-clicked')
+        return void reply(picker.selectRightClicked());
       reply(true); // ack, so the side panel knows the script is here
     });
   },

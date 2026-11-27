@@ -1,7 +1,14 @@
 import { Button, Label, TextArea, TextField } from '@heroui/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { addFeedback, type NewScreenshot } from '@/lib/db';
-import type { FromBackground, FromPage, PageContext, ToPage } from '@/lib/messages';
+import {
+  CONTEXT_COMMENT_KEY,
+  type ContextCommentRequest,
+  type FromBackground,
+  type FromPage,
+  type PageContext,
+  type ToPage,
+} from '@/lib/messages';
 import { reachPage } from '@/lib/sites';
 import { Thumbnail } from '@/features/feedback/Thumbnail';
 import { cropScreenshot, type ViewportRect } from './crop';
@@ -56,6 +63,37 @@ export function Capture({ sessionId }: { sessionId: string }) {
       setError(`Could not start selecting: ${(e as Error).message}`);
     }
   }, []);
+
+  /** Right-click › Comment with Pinpoint: the right-clicked element, or normal selection. */
+  const commentOnRightClicked = useCallback(
+    async (tabId: number) => {
+      setError(undefined);
+      selectingTab.current = tabId;
+      setState({ step: 'selecting' });
+      const selected = await toPage(tabId, { type: 'pinpoint:select-right-clicked' }).catch(
+        () => false,
+      );
+      // No script on that site yet (or nothing remembered): ask for access, then select by hand.
+      if (selected !== true) await addComment();
+    },
+    [addComment],
+  );
+
+  useEffect(() => {
+    const take = async () => {
+      const stored = await browser.storage.session.get(CONTEXT_COMMENT_KEY);
+      const request = stored[CONTEXT_COMMENT_KEY] as ContextCommentRequest | undefined;
+      if (!request) return;
+      await browser.storage.session.remove(CONTEXT_COMMENT_KEY);
+      if (Date.now() - request.at < 15_000) void commentOnRightClicked(request.tabId);
+    };
+    void take();
+    const onChanged = (changes: Record<string, unknown>) => {
+      if (CONTEXT_COMMENT_KEY in changes) void take();
+    };
+    browser.storage.session.onChanged.addListener(onChanged);
+    return () => browser.storage.session.onChanged.removeListener(onChanged);
+  }, [commentOnRightClicked]);
 
   function cancel() {
     if (selectingTab.current)
@@ -128,7 +166,9 @@ export function Capture({ sessionId }: { sessionId: string }) {
       {state.step === 'idle' && state.saved && (
         <p className="text-sm text-success">Comment saved as draft.</p>
       )}
-      <p className="text-xs text-muted">Shortcut: Alt+Shift+S</p>
+      <p className="text-xs text-muted">
+        Shortcut: Alt+Shift+S, or right-click › Comment with Pinpoint
+      </p>
       {error && (
         <p role="alert" className="text-sm text-danger">
           {error}

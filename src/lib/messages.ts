@@ -23,13 +23,26 @@ export interface PageContext {
 
 /** Side panel → content script. */
 export type ToPage =
-  { type: 'pinpoint:select-start' } | { type: 'pinpoint:select-stop' } | { type: 'pinpoint:ping' };
+  | { type: 'pinpoint:select-start' }
+  | { type: 'pinpoint:select-stop' }
+  | { type: 'pinpoint:select-right-clicked' } // answers false if there is no element to select
+  | { type: 'pinpoint:ping' };
 
 /** Content script → side panel. */
 export type FromPage =
   /** `rect`: the selected element in the viewport (CSS px), ready for the screenshot. */
   | { type: 'pinpoint:selected'; context: PageContext; rect: ViewportRect }
   | { type: 'pinpoint:select-cancelled' };
+
+/**
+ * Background → side panel, through chrome.storage.session: the panel may still be opening when
+ * the menu is clicked, so it picks the request up when it starts. Older than 15 s is ignored.
+ */
+export const CONTEXT_COMMENT_KEY = 'pinpoint_context_comment';
+export interface ContextCommentRequest {
+  tabId: number;
+  at: number;
+}
 
 /** Background → side panel, for the keyboard shortcut. */
 export type FromBackground = { type: 'pinpoint:shortcut-select' };

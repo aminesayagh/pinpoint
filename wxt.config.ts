@@ -8,7 +8,7 @@ export default defineConfig({
   manifest: {
     name: 'Pinpoint',
     description: 'Review a website visually and send the feedback to Linear as a batch of issues.',
-    permissions: ['sidePanel', 'storage', 'unlimitedStorage', 'scripting', 'tabs'],
+    permissions: ['sidePanel', 'storage', 'unlimitedStorage', 'scripting', 'tabs', 'contextMenus'],
     // Linear API, and the storage host Linear signs screenshot uploads for.
     host_permissions: ['https://api.linear.app/*', 'https://storage.googleapis.com/*'],
     // Asked once, on the first Allow: screenshots need it. Pinpoint keeps its own list of
