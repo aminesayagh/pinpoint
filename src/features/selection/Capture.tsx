@@ -12,6 +12,20 @@ type State =
   | { step: 'selecting' }
   | { step: 'commenting'; context: PageContext; shot?: NewScreenshot };
 
+/** Browser and OS of the reviewer, e.g. "Chrome 142" and "Windows". */
+function environment() {
+  const ua = (navigator as Navigator & { userAgentData?: NavigatorUAData }).userAgentData;
+  const brand = ua?.brands.find((b) => !/Not.A.Brand|Chromium/i.test(b.brand)) ?? ua?.brands[0];
+  return {
+    browser_name: brand ? `${brand.brand} ${brand.version}` : undefined,
+    operating_system: ua?.platform || undefined,
+  };
+}
+interface NavigatorUAData {
+  brands: { brand: string; version: string }[];
+  platform: string;
+}
+
 const toPage = (tabId: number, m: ToPage) => browser.tabs.sendMessage(tabId, m);
 
 /** The selected element, cut out of a screenshot of the tab as it is right now. */
@@ -82,7 +96,10 @@ export function Capture({ sessionId }: { sessionId: string }) {
         shot={state.shot}
         captureError={error}
         onSave={async (description) => {
-          await addFeedback({ ...state.context, session_id: sessionId, description }, state.shot);
+          await addFeedback(
+            { ...state.context, ...environment(), session_id: sessionId, description },
+            state.shot,
+          );
           setError(undefined);
           setState({ step: 'idle', saved: true });
         }}

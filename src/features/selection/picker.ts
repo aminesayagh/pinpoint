@@ -3,27 +3,11 @@
 // - hover highlights the element under the pointer; a click selects it;
 // - a drag draws a box and selects the smallest element that contains everything in the box.
 // The layer is a popover (top layer), placed inside an open modal dialog when there is one.
-import type { FromPage, PageContext } from '@/lib/messages';
+import type { FromPage } from '@/lib/messages';
+import { pageContext } from './context';
 import type { ViewportRect } from './crop';
 
 const DRAG_MIN = 4; // px: below this a press is a click, not a drag
-
-export function pageContext(el: Element): PageContext {
-  const r = el.getBoundingClientRect();
-  const text = (el as HTMLElement).innerText?.replace(/\s+/g, ' ').trim();
-  return {
-    page_url: location.href,
-    page_title: document.title || undefined,
-    viewport_width: window.innerWidth,
-    viewport_height: window.innerHeight,
-    element_tag: el.tagName.toLowerCase(),
-    element_text: text ? text.slice(0, 120) : undefined,
-    element_x: Math.round(r.left + window.scrollX),
-    element_y: Math.round(r.top + window.scrollY),
-    element_width: Math.round(r.width),
-    element_height: Math.round(r.height),
-  };
-}
 
 export function createPicker(send: (m: FromPage) => void) {
   let host: HTMLElement | undefined;
