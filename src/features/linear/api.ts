@@ -84,13 +84,14 @@ export async function getTeamOptions(apiKey: string, teamId: string) {
     issueLabels: { nodes: Named[] };
   }>(
     apiKey,
-    `query($teamId: String!) {
+    `query($teamId: String!, $teamIdFilter: ID!) {
       team(id: $teamId) { projects(first: 100) { nodes { id name } } }
-      issueLabels(first: 250, filter: { or: [{ team: { null: true } }, { team: { id: { eq: $teamId } } }] }) {
+      issueLabels(first: 250, filter: { or: [{ team: { null: true } }, { team: { id: { eq: $teamIdFilter } } }] }) {
         nodes { id name }
       }
     }`,
-    { teamId },
+    // Same id twice: team(id:) takes a String, the label filter an ID.
+    { teamId, teamIdFilter: teamId },
   );
   const byName = (a: Named, b: Named) => a.name.localeCompare(b.name);
   return { projects: d.team.projects.nodes.sort(byName), labels: d.issueLabels.nodes.sort(byName) };
