@@ -1,0 +1,42 @@
+{
+  "name": "pinpoint",
+  "description": "Review a website visually and send the feedback to Linear as a batch of issues.",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "postinstall": "wxt prepare"
+  },
+  "packageManager": "pnpm@11.20.0",
+  "dependencies": {
+    "@heroui/react": "^3.2.8",
+    "@heroui/styles": "^3.2.8",
+    "idb": "^8.0.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/chrome": "^0.3.8",
+    "@types/react": "^19.3.3",
+    "@types/react-dom": "^19.3.0",
+    "@wxt-dev/module-react": "^1.2.2",
+    "eslint": "^10.15.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "fake-indexeddb": "^6.2.8",
+    "prettier": "^3.10.1",
+    "tailwindcss": "^4.3.5",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.74.0",
+    "wxt": "^0.21.5"
+  }
+}
