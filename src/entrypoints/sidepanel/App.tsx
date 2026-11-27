@@ -3,7 +3,7 @@ import { LinearSettings } from '@/features/linear/LinearSettings';
 import { SiteAccess } from '@/features/linear/SiteAccess';
 import { SessionList } from '@/features/sessions/SessionList';
 import { SessionView } from '@/features/sessions/SessionView';
-import { listSessions } from '@/lib/db';
+import { listSessions, markInterruptedSubmissions } from '@/lib/db';
 
 type View = { name: 'sessions' | 'settings' } | { name: 'session'; id: string };
 
@@ -12,6 +12,9 @@ export default function App() {
 
   // Reopening the panel (or the browser) brings back the session in progress.
   useEffect(() => {
+    // A send cut short (panel closed, crash) leaves comments "submitting": they become
+    // "not confirmed" so they are checked in Linear before any retry.
+    void markInterruptedSubmissions().catch(() => {});
     listSessions().then(
       (all) => {
         const active = all.find((s) => s.status === 'active');

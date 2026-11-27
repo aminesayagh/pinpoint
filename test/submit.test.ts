@@ -124,3 +124,59 @@ test('refused, unclear and auth outcomes are kept apart', async () => {
   );
   assert.equal(saved[0]!.last_submission_error, 'Title too long');
 });
+
+test('unclear outcomes are checked in Linear, never resent blindly', async () => {
+  const { s, items } = await session(3);
+  const [created, missing, offline] = items;
+  for (const i of items) await db.updateFeedback(i!.id, { submission_status: 'submitting' });
+  assert.equal(await db.markInterruptedSubmissions(), 3, 'interrupted sends become not confirmed');
+  assert.ok((await db.listFeedback(s.id)).every((i) => i.submission_status === 'unknown'));
+
+  const fetchImpl = (async (_url: string, init?: RequestInit) => {
+    const { query, variables } = JSON.parse(init!.body as string);
+    assert.ok(!query.includes('issueCreate'), 'checking never creates');
+    if (variables.id === created!.id)
+      return Response.json({
+        data: {
+          issue: { id: created!.id, identifier: 'MAS-9', url: 'https://linear.app/i/MAS-9' },
+        },
+      });
+    if (variables.id === missing!.id)
+      return Response.json({ errors: [{ message: 'Entity not found: Issue' }] });
+    throw new TypeError('Failed to fetch');
+  }) as typeof fetch;
+  const { reconcile } = await import('../src/features/linear/submit.ts');
+  assert.equal(await reconcile('key', (await db.listFeedback(s.id))[0]!, fetchImpl), 'created');
+  assert.equal(await reconcile('key', (await db.listFeedback(s.id))[1]!, fetchImpl), 'missing');
+  assert.equal(await reconcile('key', (await db.listFeedback(s.id))[2]!, fetchImpl), 'unclear');
+  const after = await db.listFeedback(s.id);
+  assert.deepEqual(
+    after.map((i) => i.submission_status),
+    ['submitted', 'failed', 'unknown'],
+  );
+  assert.equal(after[0]!.linear_issue_identifier, 'MAS-9');
+  assert.equal(offline!.id, after[2]!.id);
+});
+
+test('a duplicate-id refusal confirms the existing issue instead of failing', async () => {
+  const { s, items } = await session(1);
+  const fetchImpl = (async (url: string, init?: RequestInit) => {
+    if (url.startsWith('https://storage.test/')) return new Response(null);
+    const { query } = JSON.parse(init!.body as string);
+    if (query.includes('fileUpload'))
+      return Response.json({
+        data: {
+          fileUpload: {
+            success: true,
+            uploadFile: { uploadUrl: 'https://storage.test/p', assetUrl: 'a', headers: [] },
+          },
+        },
+      });
+    if (query.includes('issueCreate'))
+      return Response.json({ errors: [{ message: 'Entity already exists' }] });
+    return Response.json({ data: { issue: { id: items[0]!.id, identifier: 'MAS-4', url: 'u' } } });
+  }) as typeof fetch;
+  const r = await sendBatch('key', s, items, { teamId: 'team' }, undefined, fetchImpl);
+  assert.deepEqual(r, { created: 1, failed: 0, unknown: 0 });
+  assert.equal((await db.listFeedback(s.id))[0]!.linear_issue_identifier, 'MAS-4');
+});

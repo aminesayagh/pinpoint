@@ -262,3 +262,27 @@ export async function feedbackCounts() {
   }
   return counts;
 }
+
+/**
+ * Items left in "submitting" were interrupted (panel closed, browser crashed) after the create
+ * request may have been sent. They become "unknown" so nobody retries them blindly (MAS-65).
+ */
+export async function markInterruptedSubmissions() {
+  const tx = (await db()).transaction('feedback_items', 'readwrite');
+  let count = 0;
+  for (const item of await tx.store.getAll()) {
+    if (item.submission_status === 'submitting') {
+      count++;
+      await tx.store.put({
+        ...item,
+        submission_status: 'unknown',
+        last_submission_error:
+          'Submission was interrupted. The panel closed while sending. Check Linear before sending again.',
+        updated_at: now(),
+      });
+    }
+  }
+  await tx.done;
+  if (count) changed();
+  return count;
+}
