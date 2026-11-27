@@ -1,5 +1,9 @@
 export default defineContentScript({
-  // Injected on demand, only on sites the reviewer granted.
+  // Registered at runtime, only on sites the reviewer allowed (see lib/sites.ts).
   registration: 'runtime',
-  main() {},
+  main() {
+    const w = window as { __pinpoint?: boolean };
+    if (w.__pinpoint) return; // already injected in this page
+    w.__pinpoint = true;
+  },
 });

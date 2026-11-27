@@ -26,3 +26,21 @@ Developer mode, click **Load unpacked** and choose `.output/chrome-mv3`.
 ## Stack
 
 pnpm, TypeScript, [WXT](https://wxt.dev) (Manifest V3), React, HeroUI v3, Tailwind CSS v4.
+
+## Connecting Linear
+
+Open the side panel and paste a Linear **personal API key** (Linear → Settings → Security & access).
+Pinpoint checks the key with Linear before saving it, then lets you pick the default team,
+project, priority and labels for new review sessions.
+
+The key is kept in `chrome.storage.local`. That is fine for a personal prototype but it is
+not a secure vault: a public release would need OAuth instead.
+
+## Permissions
+
+| Permission | Why |
+|---|---|
+| `sidePanel`, `storage`, `unlimitedStorage` | The panel UI, settings, and drafts with screenshots |
+| `tabs`, `scripting` | Know which site the current tab shows; load the selection script there |
+| `api.linear.app`, `storage.googleapis.com` | Linear's API, and the host Linear signs screenshot uploads for |
+| Review sites (optional) | Asked one site at a time with **Allow** in the panel, localhost included. Never "all websites" at install |
