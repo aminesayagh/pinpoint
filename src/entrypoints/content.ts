@@ -1,3 +1,4 @@
+import { createComposer } from '@/features/selection/composer';
 import { createPicker } from '@/features/selection/picker';
 import type { FromPage, ToPage } from '@/lib/messages';
 
@@ -9,10 +10,18 @@ export default defineContentScript({
     if (w.__pinpoint) return; // already injected in this page
     w.__pinpoint = true;
 
-    const picker = createPicker((m: FromPage) => void browser.runtime.sendMessage(m));
+    const send = (m: FromPage) => void browser.runtime.sendMessage(m);
+    const picker = createPicker(send);
+    const composer = createComposer(send);
     browser.runtime.onMessage.addListener((m: ToPage, _sender, reply) => {
       if (m.type === 'pinpoint:select-start') picker.start();
       if (m.type === 'pinpoint:select-stop') picker.stop();
+      if (m.type === 'pinpoint:compose') {
+        const el = picker.selected();
+        if (!el?.isConnected) return void reply(false);
+        composer.open(() => el.getBoundingClientRect());
+      }
+      if (m.type === 'pinpoint:compose-close') composer.close();
       if (m.type === 'pinpoint:select-right-clicked')
         return void reply(picker.selectRightClicked());
       reply(true); // ack, so the side panel knows the script is here

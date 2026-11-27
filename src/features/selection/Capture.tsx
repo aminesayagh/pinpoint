@@ -46,6 +46,33 @@ export function Capture({ sessionId }: { sessionId: string }) {
   const [state, setState] = useState<State>({ step: 'idle' });
   const [error, setError] = useState<string>();
   const selectingTab = useRef<number>(undefined);
+  // The tab showing the floating comment box, and the capture it belongs to.
+  const composeTab = useRef<number>(undefined);
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  const closeComposer = () => {
+    if (composeTab.current)
+      void toPage(composeTab.current, { type: 'pinpoint:compose-close' }).catch(() => {});
+    composeTab.current = undefined;
+  };
+
+  /** Saves the comment being written, from the panel form or the box on the page. */
+  const saveComment = useCallback(
+    async (description: string) => {
+      const s = stateRef.current;
+      if (s.step !== 'commenting') return;
+      await addFeedback(
+        { ...s.context, ...environment(), session_id: sessionId, description },
+        s.shot,
+      );
+      setError(undefined);
+      setState({ step: 'idle', saved: true });
+    },
+    [sessionId],
+  );
 
   const addComment = useCallback(async () => {
     setError(undefined);
@@ -106,6 +133,17 @@ export function Capture({ sessionId }: { sessionId: string }) {
   useEffect(() => {
     const onMessage = (m: FromPage | FromBackground, sender: Browser.runtime.MessageSender) => {
       if (m.type === 'pinpoint:shortcut-select') return void addComment();
+      if (m.type === 'pinpoint:compose-save' || m.type === 'pinpoint:compose-cancel') {
+        if (sender.tab?.id !== composeTab.current) return;
+        composeTab.current = undefined;
+        if (m.type === 'pinpoint:compose-cancel') {
+          setError(undefined);
+          return setState({ step: 'idle' });
+        }
+        return void saveComment(m.text).catch((e: Error) =>
+          setError(`Could not save the comment: ${(e as Error).message}`),
+        );
+      }
       if (!sender.tab?.id || sender.tab.id !== selectingTab.current) return;
       selectingTab.current = undefined;
       if (m.type === 'pinpoint:select-cancelled') return setState({ step: 'idle' });
@@ -122,11 +160,14 @@ export function Capture({ sessionId }: { sessionId: string }) {
         }
         await toPage(id, { type: 'pinpoint:select-stop' }).catch(() => {});
         setState({ step: 'commenting', context: m.context, shot });
+        // The screenshot is taken: now the comment box can float next to the element.
+        if ((await toPage(id, { type: 'pinpoint:compose' }).catch(() => false)) === true)
+          composeTab.current = id;
       })();
     };
     browser.runtime.onMessage.addListener(onMessage);
     return () => browser.runtime.onMessage.removeListener(onMessage);
-  }, [addComment]);
+  }, [addComment, saveComment]);
 
   if (state.step === 'commenting') {
     return (
@@ -134,14 +175,11 @@ export function Capture({ sessionId }: { sessionId: string }) {
         shot={state.shot}
         captureError={error}
         onSave={async (description) => {
-          await addFeedback(
-            { ...state.context, ...environment(), session_id: sessionId, description },
-            state.shot,
-          );
-          setError(undefined);
-          setState({ step: 'idle', saved: true });
+          await saveComment(description);
+          closeComposer();
         }}
         onCancel={() => {
+          closeComposer();
           setError(undefined);
           setState({ step: 'idle' });
         }}

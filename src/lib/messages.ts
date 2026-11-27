@@ -26,13 +26,17 @@ export type ToPage =
   | { type: 'pinpoint:select-start' }
   | { type: 'pinpoint:select-stop' }
   | { type: 'pinpoint:select-right-clicked' } // answers false if there is no element to select
+  | { type: 'pinpoint:compose' } // floating comment box next to the selected element
+  | { type: 'pinpoint:compose-close' }
   | { type: 'pinpoint:ping' };
 
 /** Content script → side panel. */
 export type FromPage =
   /** `rect`: the selected element in the viewport (CSS px), ready for the screenshot. */
   | { type: 'pinpoint:selected'; context: PageContext; rect: ViewportRect }
-  | { type: 'pinpoint:select-cancelled' };
+  | { type: 'pinpoint:select-cancelled' }
+  | { type: 'pinpoint:compose-save'; text: string }
+  | { type: 'pinpoint:compose-cancel' };
 
 /**
  * Background → side panel, through chrome.storage.session: the panel may still be opening when
