@@ -10,6 +10,7 @@ import {
 } from '@/lib/db';
 import { useLive } from '@/lib/useLive';
 import { useDestination } from '@/features/linear/useDestination';
+import { SavedThumbnail } from '@/features/feedback/Thumbnail';
 import { Capture } from '@/features/selection/Capture';
 import { sessionName, STATUS_LABEL } from './SessionList';
 
@@ -108,24 +109,30 @@ export function SessionView({ id, onBack }: { id: string; onBack: () => void }) 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold">Comments ({items.value?.length ?? 0})</h2>
         {items.value?.length ? (
-          <ul className="flex flex-col gap-1 text-sm">
+          <ul className="flex flex-col gap-2 text-sm">
             {items.value.map((i) => (
-              <li key={i.id}>
-                #{i.sequence_number} {i.title || i.description}
-                {i.linear_issue_url && (
-                  <>
-                    {' '}
-                    ·{' '}
-                    <a
-                      className="underline"
-                      href={i.linear_issue_url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {i.linear_issue_identifier}
-                    </a>
-                  </>
-                )}
+              <li key={i.id} className="flex items-start gap-3">
+                <SavedThumbnail
+                  feedbackId={i.id}
+                  alt={`Screenshot of comment #${i.sequence_number}`}
+                />
+                <span className="min-w-0">
+                  #{i.sequence_number} {i.title || i.description}
+                  {i.linear_issue_url && (
+                    <>
+                      {' '}
+                      ·{' '}
+                      <a
+                        className="underline"
+                        href={i.linear_issue_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {i.linear_issue_identifier}
+                      </a>
+                    </>
+                  )}
+                </span>
               </li>
             ))}
           </ul>

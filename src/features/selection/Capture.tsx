@@ -1,11 +1,12 @@
 import { Button, Label, TextArea, TextField } from '@heroui/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { addFeedback, type NewScreenshot } from '@/lib/db';
 import type { FromBackground, FromPage, PageContext, ToPage } from '@/lib/messages';
 import { reachPage } from '@/lib/sites';
+import { Thumbnail } from '@/features/feedback/Thumbnail';
 import { cropScreenshot, type ViewportRect } from './crop';
 
-// One action in a session: Add comment = drag a box on the page, then write about it.
+// One action in a session: Add comment = select an element (click, or drag a box), then write.
 type State =
   | { step: 'idle'; saved?: boolean }
   | { step: 'selecting' }
@@ -13,7 +14,7 @@ type State =
 
 const toPage = (tabId: number, m: ToPage) => browser.tabs.sendMessage(tabId, m);
 
-/** The selected area, cut out of a screenshot of the tab as it is right now. */
+/** The selected element, cut out of a screenshot of the tab as it is right now. */
 async function elementShot(windowId: number, rect: ViewportRect, viewportWidth: number) {
   const dataUrl = await browser.tabs.captureVisibleTab(windowId, { format: 'png' });
   const page = await (await fetch(dataUrl)).blob();
@@ -98,7 +99,7 @@ export function Capture({ sessionId }: { sessionId: string }) {
     <section className="flex flex-col gap-2">
       {state.step === 'selecting' ? (
         <div className="flex items-center justify-between gap-2 rounded-lg bg-accent/10 px-3 py-2 text-sm">
-          <span>Drag a box around what you want to comment on. Esc cancels.</span>
+          <span>Click an element, or drag a box to take the element around it. Esc cancels.</span>
           <Button size="sm" variant="ghost" onPress={cancel}>
             Cancel
           </Button>
@@ -136,8 +137,6 @@ function CommentForm({
 }) {
   const [text, setText] = useState('');
   const [error, setError] = useState<string>();
-  const shotUrl = useMemo(() => (shot ? URL.createObjectURL(shot.image_blob) : undefined), [shot]);
-  useEffect(() => () => void (shotUrl && URL.revokeObjectURL(shotUrl)), [shotUrl]);
 
   async function save() {
     try {
@@ -156,27 +155,23 @@ function CommentForm({
         void save();
       }}
     >
-      <p className="text-sm">
-        <strong>
-          Area {c.element_width}×{c.element_height} in &lt;{c.element_tag}&gt;
-          {c.element_text ? ` “${c.element_text.slice(0, 40)}”` : ''}
-        </strong>
-        <br />
-        <span className="text-xs text-muted">
-          {c.page_url} · viewport {c.viewport_width}×{c.viewport_height}
-        </span>
-      </p>
+      <div className="flex items-start gap-3">
+        {shot && <Thumbnail image={shot.image_blob} alt="Screenshot of the selected element" />}
+        <p className="min-w-0 text-sm">
+          <strong>
+            &lt;{c.element_tag}&gt;{c.element_text ? ` “${c.element_text.slice(0, 40)}”` : ''} ·{' '}
+            {c.element_width}×{c.element_height}
+          </strong>
+          <br />
+          <span className="break-all text-xs text-muted">
+            {c.page_url} · viewport {c.viewport_width}×{c.viewport_height}
+          </span>
+        </p>
+      </div>
       {captureError && (
         <p role="alert" className="text-sm text-warning">
           {captureError}
         </p>
-      )}
-      {shotUrl && (
-        <img
-          src={shotUrl}
-          alt="Screenshot of the selected area"
-          className="max-h-64 self-start rounded border border-default object-contain"
-        />
       )}
       <TextField value={text} onChange={setText} autoFocus>
         <Label>Comment</Label>

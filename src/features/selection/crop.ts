@@ -1,4 +1,4 @@
-// The screenshot of a comment shows the selected area only (MAS-70 decision).
+// The screenshot of a comment shows the selected element only (MAS-70 decision).
 
 /** Element box in the viewport, CSS pixels, at capture time. */
 export interface ViewportRect {
