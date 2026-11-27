@@ -79,7 +79,6 @@ export function Capture({ sessionId }: { sessionId: string }) {
   if (state.step === 'commenting') {
     return (
       <CommentForm
-        context={state.context}
         shot={state.shot}
         captureError={error}
         onSave={async (description) => {
@@ -123,13 +122,11 @@ export function Capture({ sessionId }: { sessionId: string }) {
 }
 
 function CommentForm({
-  context: c,
   shot,
   captureError,
   onSave,
   onCancel,
 }: {
-  context: PageContext;
   shot?: NewScreenshot;
   captureError?: string;
   onSave: (description: string) => Promise<void>;
@@ -155,19 +152,7 @@ function CommentForm({
         void save();
       }}
     >
-      <div className="flex items-start gap-3">
-        {shot && <Thumbnail image={shot.image_blob} alt="Screenshot of the selected element" />}
-        <p className="min-w-0 text-sm">
-          <strong>
-            &lt;{c.element_tag}&gt;{c.element_text ? ` “${c.element_text.slice(0, 40)}”` : ''} ·{' '}
-            {c.element_width}×{c.element_height}
-          </strong>
-          <br />
-          <span className="break-all text-xs text-muted">
-            {c.page_url} · viewport {c.viewport_width}×{c.viewport_height}
-          </span>
-        </p>
-      </div>
+      {shot && <Thumbnail image={shot.image_blob} alt="Screenshot of the selected element" />}
       {captureError && (
         <p role="alert" className="text-sm text-warning">
           {captureError}
