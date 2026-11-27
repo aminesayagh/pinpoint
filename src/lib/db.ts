@@ -36,6 +36,8 @@ export interface FeedbackItem {
   element_height?: number;
   browser_name?: string;
   operating_system?: string;
+  /** Left out of the next send; stays in the session for later. */
+  excluded?: boolean;
   submission_status: SubmissionStatus;
   linear_issue_id?: string;
   linear_issue_identifier?: string;
