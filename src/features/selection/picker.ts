@@ -126,7 +126,10 @@ export function createPicker(send: (m: FromPage) => void) {
     window.addEventListener('scroll', onScroll, true);
   }
 
+  let lastSelected: Element | undefined;
+
   function select(el: Element) {
+    lastSelected = el;
     // The screenshot is the element only: bring it fully on screen when it fits.
     const r = el.getBoundingClientRect();
     const fits = r.width <= window.innerWidth && r.height <= window.innerHeight;
@@ -165,5 +168,8 @@ export function createPicker(send: (m: FromPage) => void) {
     host = undefined;
   }
 
-  return { start, stop };
+  /** The element chosen last: where the comment box goes. */
+  const selected = () => lastSelected;
+
+  return { start, stop, selected };
 }

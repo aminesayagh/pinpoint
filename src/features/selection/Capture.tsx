@@ -35,9 +35,8 @@ interface NavigatorUAData {
 
 const toPage = (tabId: number, m: ToPage) => browser.tabs.sendMessage(tabId, m);
 
-/** The selected element, cut out of a screenshot of the tab as it is right now. */
-async function elementShot(windowId: number, rect: ViewportRect, viewportWidth: number) {
-  const dataUrl = await browser.tabs.captureVisibleTab(windowId, { format: 'png' });
+/** The selected element, cut out of a screenshot (data URL) of the tab. */
+async function cropShot(dataUrl: string, rect: ViewportRect, viewportWidth: number) {
   const page = await (await fetch(dataUrl)).blob();
   return cropScreenshot(page, rect, viewportWidth);
 }
@@ -46,6 +45,36 @@ export function Capture({ sessionId }: { sessionId: string }) {
   const [state, setState] = useState<State>({ step: 'idle' });
   const [error, setError] = useState<string>();
   const selectingTab = useRef<number>(undefined);
+  // The tab showing the floating comment box, and the capture it belongs to.
+  const composeTab = useRef<number>(undefined);
+  // The cropped screenshot is made after the box is shown; saving waits for it.
+  const shotPromise = useRef<Promise<NewScreenshot | undefined>>(Promise.resolve(undefined));
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  const closeComposer = () => {
+    if (composeTab.current)
+      void toPage(composeTab.current, { type: 'pinpoint:compose-close' }).catch(() => {});
+    composeTab.current = undefined;
+  };
+
+  /** Saves the comment being written, from the panel form or the box on the page. */
+  const saveComment = useCallback(
+    async (description: string) => {
+      const s = stateRef.current;
+      if (s.step !== 'commenting') return;
+      const shot = await shotPromise.current;
+      await addFeedback(
+        { ...s.context, ...environment(), session_id: sessionId, description },
+        shot,
+      );
+      setError(undefined);
+      setState({ step: 'idle', saved: true });
+    },
+    [sessionId],
+  );
 
   const addComment = useCallback(async () => {
     setError(undefined);
@@ -92,27 +121,52 @@ export function Capture({ sessionId }: { sessionId: string }) {
   useEffect(() => {
     const onMessage = (m: FromPage | FromBackground, sender: Browser.runtime.MessageSender) => {
       if (m.type === 'pinpoint:shortcut-select') return void addComment();
+      if (m.type === 'pinpoint:compose-save' || m.type === 'pinpoint:compose-cancel') {
+        if (sender.tab?.id !== composeTab.current) return;
+        composeTab.current = undefined;
+        if (m.type === 'pinpoint:compose-cancel') {
+          setError(undefined);
+          return setState({ step: 'idle' });
+        }
+        return void saveComment(m.text).catch((e: Error) =>
+          setError(`Could not save the comment: ${(e as Error).message}`),
+        );
+      }
       if (!sender.tab?.id || sender.tab.id !== selectingTab.current) return;
       selectingTab.current = undefined;
       if (m.type === 'pinpoint:select-cancelled') return setState({ step: 'idle' });
       const { id, windowId } = sender.tab;
       void (async () => {
-        let shot: NewScreenshot | undefined;
-        try {
-          shot = await elementShot(windowId, m.rect, m.context.viewport_width);
-        } catch (e) {
+        const failed = (e: unknown) => {
           // A failed screenshot must not cost the comment.
           setError(
             `The screenshot failed (${(e as Error).message}). You can still save the comment.`,
           );
-        }
+          return undefined;
+        };
+        // 1. The raw screenshot, while nothing of Pinpoint is on the page.
+        const dataUrl = await browser.tabs
+          .captureVisibleTab(windowId, { format: 'png' })
+          .catch(failed);
+        // 2. Right away, the comment box: it can no longer end up in the screenshot.
         await toPage(id, { type: 'pinpoint:select-stop' }).catch(() => {});
-        setState({ step: 'commenting', context: m.context, shot });
+        if ((await toPage(id, { type: 'pinpoint:compose' }).catch(() => false)) === true)
+          composeTab.current = id;
+        // 3. The crop, while the reviewer starts typing.
+        const shot = dataUrl
+          ? cropShot(dataUrl, m.rect, m.context.viewport_width).catch(failed)
+          : Promise.resolve(undefined);
+        shotPromise.current = shot;
+        setState({ step: 'commenting', context: m.context });
+        const done = await shot;
+        setState((s) =>
+          s.step === 'commenting' && s.context === m.context ? { ...s, shot: done } : s,
+        );
       })();
     };
     browser.runtime.onMessage.addListener(onMessage);
     return () => browser.runtime.onMessage.removeListener(onMessage);
-  }, [addComment]);
+  }, [addComment, saveComment]);
 
   if (state.step === 'commenting') {
     return (
@@ -120,14 +174,11 @@ export function Capture({ sessionId }: { sessionId: string }) {
         shot={state.shot}
         captureError={error}
         onSave={async (description) => {
-          await addFeedback(
-            { ...state.context, ...environment(), session_id: sessionId, description },
-            state.shot,
-          );
-          setError(undefined);
-          setState({ step: 'idle', saved: true });
+          await saveComment(description);
+          closeComposer();
         }}
         onCancel={() => {
+          closeComposer();
           setError(undefined);
           setState({ step: 'idle' });
         }}
