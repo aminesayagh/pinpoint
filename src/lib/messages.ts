@@ -23,10 +23,7 @@ export interface PageContext {
 
 /** Side panel → content script. */
 export type ToPage =
-  | { type: 'pinpoint:select-start' }
-  | { type: 'pinpoint:select-stop' }
-  | { type: 'pinpoint:select-right-clicked' } // answers false if there is no element to select
-  | { type: 'pinpoint:ping' };
+  { type: 'pinpoint:select-start' } | { type: 'pinpoint:select-stop' } | { type: 'pinpoint:ping' };
 
 /** Content script → side panel. */
 export type FromPage =
@@ -40,7 +37,6 @@ export type FromPage =
  */
 export const CONTEXT_COMMENT_KEY = 'pinpoint_context_comment';
 export interface ContextCommentRequest {
-  tabId: number;
   at: number;
 }
 

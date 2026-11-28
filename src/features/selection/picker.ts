@@ -165,25 +165,5 @@ export function createPicker(send: (m: FromPage) => void) {
     host = undefined;
   }
 
-  // Right-click › Comment with Pinpoint: the element under the cursor, remembered here because
-  // the menu click itself does not say which element it was.
-  let rightClicked: Element | undefined;
-  document.addEventListener(
-    'contextmenu',
-    (e) => {
-      const target = e.composedPath()[0];
-      rightClicked = target instanceof Element ? target : undefined;
-    },
-    true,
-  );
-
-  /** Selects the right-clicked element at once. False when there is none to select. */
-  function selectRightClicked() {
-    if (!rightClicked?.isConnected) return false;
-    stop();
-    select(rightClicked);
-    return true;
-  }
-
-  return { start, stop, selectRightClicked };
+  return { start, stop };
 }
