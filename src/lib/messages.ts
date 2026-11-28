@@ -31,5 +31,14 @@ export type FromPage =
   | { type: 'pinpoint:selected'; context: PageContext; rect: ViewportRect }
   | { type: 'pinpoint:select-cancelled' };
 
+/**
+ * Background → side panel, through chrome.storage.session: the panel may still be opening when
+ * the menu is clicked, so it picks the request up when it starts. Older than 15 s is ignored.
+ */
+export const CONTEXT_COMMENT_KEY = 'pinpoint_context_comment';
+export interface ContextCommentRequest {
+  at: number;
+}
+
 /** Background → side panel, for the keyboard shortcut. */
 export type FromBackground = { type: 'pinpoint:shortcut-select' };

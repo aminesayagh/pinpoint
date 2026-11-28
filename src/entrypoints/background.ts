@@ -1,4 +1,8 @@
-import type { FromBackground } from '@/lib/messages';
+import {
+  CONTEXT_COMMENT_KEY,
+  type ContextCommentRequest,
+  type FromBackground,
+} from '@/lib/messages';
 import { syncContentScript } from '@/lib/sites';
 
 export default defineBackground(() => {
@@ -11,7 +15,25 @@ export default defineBackground(() => {
   browser.storage.local.onChanged.addListener((changes) => {
     if (changes.allowed_sites) void syncContentScript();
   });
-  browser.runtime.onInstalled.addListener(syncContentScript);
+  browser.runtime.onInstalled.addListener(() => {
+    void syncContentScript();
+    void browser.contextMenus.removeAll().then(() =>
+      browser.contextMenus.create({
+        id: 'pinpoint-comment',
+        title: 'Comment with Pinpoint',
+        contexts: ['all'],
+      }),
+    );
+  });
+
+  // Right-click › Comment with Pinpoint: open the panel (only allowed right now, in the click),
+  // then ask it to start selecting. A comment always starts with the reviewer's own selection.
+  browser.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId !== 'pinpoint-comment' || !tab?.windowId) return;
+    void browser.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
+    const request: ContextCommentRequest = { at: Date.now() };
+    void browser.storage.session.set({ [CONTEXT_COMMENT_KEY]: request });
+  });
 
   // Alt+Shift+S: open the side panel and ask it to start selecting in the current tab.
   browser.commands.onCommand.addListener((command, tab) => {

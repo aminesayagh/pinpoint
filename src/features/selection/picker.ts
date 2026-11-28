@@ -135,7 +135,7 @@ export function createPicker(send: (m: FromPage) => void) {
     if (fits && cut) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     // Chrome screenshots the last frame it displayed: remove the layer, then wait until the page
     // without it was painted and shown (two frames are not always enough).
-    host!.style.display = 'none';
+    if (host) host.style.display = 'none';
     requestAnimationFrame(() =>
       requestAnimationFrame(() =>
         setTimeout(() => {
