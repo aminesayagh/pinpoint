@@ -15,6 +15,11 @@ export default defineConfig({
     // allowed sites and only works there (lib/sites.ts).
     optional_host_permissions: ['<all_urls>'],
     action: { default_title: 'Open Pinpoint' },
+    // The floating comment box is an extension frame on the reviewed page (composer.ts).
+    // use_dynamic_url: sites cannot probe a fixed URL to detect Pinpoint.
+    web_accessible_resources: [
+      { resources: ['composer.html'], matches: ['<all_urls>'], use_dynamic_url: true },
+    ],
     commands: {
       'select-element': {
         suggested_key: { default: 'Alt+Shift+S' },

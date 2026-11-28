@@ -12,7 +12,7 @@ export default defineContentScript({
 
     const send = (m: FromPage) => void browser.runtime.sendMessage(m);
     const picker = createPicker(send);
-    const composer = createComposer(send);
+    const composer = createComposer();
     browser.runtime.onMessage.addListener((m: ToPage, _sender, reply) => {
       if (m.type === 'pinpoint:select-start') picker.start();
       if (m.type === 'pinpoint:select-stop') picker.stop();
