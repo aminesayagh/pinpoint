@@ -22,34 +22,40 @@ export function createComposer(send: (m: FromPage) => void) {
     const root = layer.attachShadow({ mode: 'closed' });
     root.innerHTML = `
       <style>
-        .outline { position: fixed; border: 2px solid #2563eb; border-radius: 5px; box-sizing: border-box; pointer-events: none; }
-        .card { position: fixed; width: ${WIDTH}px; box-sizing: border-box; padding: 10px;
-                background: white; color: #0f172a; border-radius: 10px;
-                box-shadow: 0 8px 30px rgb(15 23 42 / 0.25); font: 13px/1.4 system-ui, sans-serif; }
-        textarea { width: 100%; box-sizing: border-box; min-height: 76px; resize: vertical;
-                   border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px;
-                   font: inherit; color: inherit; background: white; }
-        textarea:focus { outline: 2px solid #2563eb; outline-offset: -1px; border-color: transparent; }
-        .row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
-        .hint { margin-right: auto; color: #64748b; font-size: 11px; }
-        button { font: inherit; border: 0; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
-        .save { background: #2563eb; color: white; }
-        .save:disabled { opacity: 0.5; cursor: default; }
-        .cancel { background: #e2e8f0; color: #0f172a; }
+        .outline { position: fixed; border: 2px solid rgb(37 99 235 / 0.4); border-radius: 5px;
+                   box-sizing: border-box; pointer-events: none; }
+        .card { position: fixed; width: ${WIDTH}px; display: flex; align-items: flex-start;
+                gap: 8px; font: 14px/20px system-ui, sans-serif; }
+        .pin { flex: none; width: 24px; height: 24px; margin-top: 6px; background: #2563eb;
+               border-radius: 50% 50% 50% 0; box-shadow: 0 2px 6px rgb(15 23 42 / 0.25); }
+        .pill { flex: 1; display: flex; align-items: flex-end; gap: 6px; min-width: 0;
+                padding: 5px 5px 5px 14px; background: white; border: 1.5px solid #2563eb;
+                border-radius: 18px; box-shadow: 0 6px 20px rgb(15 23 42 / 0.18); }
+        textarea { flex: 1; min-width: 0; height: 20px; max-height: 140px; margin: 3px 0;
+                   padding: 0; border: 0; outline: 0; resize: none; overflow-y: auto;
+                   font: inherit; color: #0f172a; background: transparent; }
+        textarea::placeholder { color: #94a3b8; }
+        .send { flex: none; width: 26px; height: 26px; border: 0; border-radius: 50%;
+                display: grid; place-items: center; cursor: pointer;
+                background: #2563eb; color: white; }
+        .send:disabled { background: #e2e8f0; color: #94a3b8; cursor: default; }
       </style>
       <div class="outline"></div>
-      <div class="card" role="dialog" aria-label="Pinpoint comment">
-        <textarea aria-label="Comment" placeholder="What is wrong, and what did you expect?"></textarea>
-        <div class="row">
-          <span class="hint">Ctrl+Enter to save</span>
-          <button type="button" class="cancel">Cancel</button>
-          <button type="button" class="save" disabled>Save</button>
+      <div class="card">
+        <div class="pin"></div>
+        <div class="pill">
+          <textarea rows="1" aria-label="Comment" placeholder="Add a comment"></textarea>
+          <button type="button" class="send" aria-label="Save comment" disabled>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg>
+          </button>
         </div>
       </div>`;
     const outline = root.querySelector<HTMLElement>('.outline')!;
     const card = root.querySelector<HTMLElement>('.card')!;
     const text = root.querySelector('textarea')!;
-    const save = root.querySelector<HTMLButtonElement>('.save')!;
+    const save = root.querySelector<HTMLButtonElement>('.send')!;
 
     const submit = () => {
       if (!text.value.trim()) return;
@@ -60,9 +66,13 @@ export function createComposer(send: (m: FromPage) => void) {
       send({ type: 'pinpoint:compose-cancel' });
       close();
     };
-    text.addEventListener('input', () => (save.disabled = !text.value.trim()));
+    text.addEventListener('input', () => {
+      save.disabled = !text.value.trim();
+      // One line to start, growing with the text.
+      text.style.height = '20px';
+      text.style.height = `${text.scrollHeight}px`;
+    });
     save.addEventListener('click', submit);
-    root.querySelector('.cancel')!.addEventListener('click', cancel);
     // Typing here must not reach the site's own keyboard shortcuts.
     for (const type of ['keydown', 'keyup', 'keypress'] as const) {
       layer.addEventListener(type, (e) => {
@@ -70,7 +80,11 @@ export function createComposer(send: (m: FromPage) => void) {
         if (type !== 'keydown') return;
         const k = e as KeyboardEvent;
         if (k.key === 'Escape') cancel();
-        if (k.key === 'Enter' && (k.ctrlKey || k.metaKey)) submit();
+        // Enter sends, Shift+Enter starts a new line.
+        if (k.key === 'Enter' && !k.shiftKey && !k.isComposing) {
+          k.preventDefault();
+          submit();
+        }
       });
     }
 
