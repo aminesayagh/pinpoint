@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import logo from '@/assets/logo.svg';
 import { LinearSettings } from '@/features/linear/LinearSettings';
 import { SiteAccess } from '@/features/linear/SiteAccess';
 import { SessionList } from '@/features/sessions/SessionList';
@@ -36,7 +37,10 @@ export default function App() {
   return (
     <main className="flex flex-col gap-4 p-4">
       <header className="flex items-center gap-4">
-        <h1 className="mr-auto text-lg font-semibold">Pinpoint</h1>
+        <h1 className="mr-auto flex items-center gap-2 text-lg font-semibold">
+          <img src={logo} alt="" className="size-5" />
+          Pinpoint
+        </h1>
         {tab('sessions', 'Sessions')}
         {tab('settings', 'Settings')}
       </header>
