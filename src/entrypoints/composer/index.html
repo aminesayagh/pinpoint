@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="color-scheme" content="light" />
+    <title>Pinpoint comment</title>
+    <style>
+      /* PAD leaves room for the shadow inside the frame (see composer.ts). */
+      html,
+      body {
+        margin: 0;
+        background: transparent;
+        overflow: hidden;
+      }
+      body {
+        padding: 12px;
+        font:
+          14px/20px system-ui,
+          sans-serif;
+      }
+      .card {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .pin {
+        flex: none;
+        width: 24px;
+        height: 24px;
+        margin-top: 6px;
+        background: #2563eb;
+        border-radius: 50% 50% 50% 0;
+        box-shadow: 0 2px 6px rgb(15 23 42 / 0.25);
+        animation: pp-pop 280ms 60ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      }
+      .pill {
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        min-width: 0;
+        padding: 5px 5px 5px 14px;
+        background: white;
+        border: 1.5px solid #2563eb;
+        border-radius: 18px;
+        box-shadow: 0 6px 20px rgb(15 23 42 / 0.18);
+      }
+      textarea {
+        flex: 1;
+        min-width: 0;
+        height: 20px;
+        max-height: 140px;
+        margin: 3px 0;
+        padding: 0;
+        border: 0;
+        outline: 0;
+        resize: none;
+        overflow-y: auto;
+        font: inherit;
+        color: #0f172a;
+        background: transparent;
+      }
+      textarea::placeholder {
+        color: #94a3b8;
+      }
+      .send {
+        flex: none;
+        width: 26px;
+        height: 26px;
+        border: 0;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        background: #2563eb;
+        color: white;
+      }
+      .send:disabled {
+        background: #e2e8f0;
+        color: #94a3b8;
+        cursor: default;
+      }
+      @keyframes pp-pop {
+        from {
+          opacity: 0;
+          transform: scale(0.4);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .pin {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="pin"></div>
+      <div class="pill">
+        <textarea rows="1" aria-label="Comment" placeholder="Add a comment"></textarea>
+        <button type="button" class="send" aria-label="Save comment" disabled>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
