@@ -39,6 +39,18 @@ export function createComposer(send: (m: FromPage) => void) {
                 display: grid; place-items: center; cursor: pointer;
                 background: #2563eb; color: white; }
         .send:disabled { background: #e2e8f0; color: #94a3b8; cursor: default; }
+        /* Entrance: the box rises toward the element, the pin pops, the ring fades in. */
+        .card { animation: pp-rise 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+                transform-origin: top left; --from: 6px; }
+        .card.above { transform-origin: bottom left; --from: -6px; }
+        .pin { animation: pp-pop 280ms 60ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        .outline { animation: pp-fade 200ms ease-out both; }
+        @keyframes pp-rise { from { opacity: 0; transform: translateY(var(--from)) scale(0.97); } }
+        @keyframes pp-pop { from { opacity: 0; transform: scale(0.4); } }
+        @keyframes pp-fade { from { opacity: 0; } }
+        @media (prefers-reduced-motion: reduce) {
+          .card, .pin, .outline { animation: none; }
+        }
       </style>
       <div class="outline"></div>
       <div class="card">

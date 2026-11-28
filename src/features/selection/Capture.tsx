@@ -35,9 +35,8 @@ interface NavigatorUAData {
 
 const toPage = (tabId: number, m: ToPage) => browser.tabs.sendMessage(tabId, m);
 
-/** The selected element, cut out of a screenshot of the tab as it is right now. */
-async function elementShot(windowId: number, rect: ViewportRect, viewportWidth: number) {
-  const dataUrl = await browser.tabs.captureVisibleTab(windowId, { format: 'png' });
+/** The selected element, cut out of a screenshot (data URL) of the tab. */
+async function cropShot(dataUrl: string, rect: ViewportRect, viewportWidth: number) {
   const page = await (await fetch(dataUrl)).blob();
   return cropScreenshot(page, rect, viewportWidth);
 }
@@ -48,6 +47,8 @@ export function Capture({ sessionId }: { sessionId: string }) {
   const selectingTab = useRef<number>(undefined);
   // The tab showing the floating comment box, and the capture it belongs to.
   const composeTab = useRef<number>(undefined);
+  // The cropped screenshot is made after the box is shown; saving waits for it.
+  const shotPromise = useRef<Promise<NewScreenshot | undefined>>(Promise.resolve(undefined));
   const stateRef = useRef(state);
   useEffect(() => {
     stateRef.current = state;
@@ -64,9 +65,10 @@ export function Capture({ sessionId }: { sessionId: string }) {
     async (description: string) => {
       const s = stateRef.current;
       if (s.step !== 'commenting') return;
+      const shot = await shotPromise.current;
       await addFeedback(
         { ...s.context, ...environment(), session_id: sessionId, description },
-        s.shot,
+        shot,
       );
       setError(undefined);
       setState({ step: 'idle', saved: true });
@@ -135,20 +137,31 @@ export function Capture({ sessionId }: { sessionId: string }) {
       if (m.type === 'pinpoint:select-cancelled') return setState({ step: 'idle' });
       const { id, windowId } = sender.tab;
       void (async () => {
-        let shot: NewScreenshot | undefined;
-        try {
-          shot = await elementShot(windowId, m.rect, m.context.viewport_width);
-        } catch (e) {
+        const failed = (e: unknown) => {
           // A failed screenshot must not cost the comment.
           setError(
             `The screenshot failed (${(e as Error).message}). You can still save the comment.`,
           );
-        }
+          return undefined;
+        };
+        // 1. The raw screenshot, while nothing of Pinpoint is on the page.
+        const dataUrl = await browser.tabs
+          .captureVisibleTab(windowId, { format: 'png' })
+          .catch(failed);
+        // 2. Right away, the comment box: it can no longer end up in the screenshot.
         await toPage(id, { type: 'pinpoint:select-stop' }).catch(() => {});
-        setState({ step: 'commenting', context: m.context, shot });
-        // The screenshot is taken: now the comment box can float next to the element.
         if ((await toPage(id, { type: 'pinpoint:compose' }).catch(() => false)) === true)
           composeTab.current = id;
+        // 3. The crop, while the reviewer starts typing.
+        const shot = dataUrl
+          ? cropShot(dataUrl, m.rect, m.context.viewport_width).catch(failed)
+          : Promise.resolve(undefined);
+        shotPromise.current = shot;
+        setState({ step: 'commenting', context: m.context });
+        const done = await shot;
+        setState((s) =>
+          s.step === 'commenting' && s.context === m.context ? { ...s, shot: done } : s,
+        );
       })();
     };
     browser.runtime.onMessage.addListener(onMessage);
