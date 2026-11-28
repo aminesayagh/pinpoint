@@ -27,11 +27,11 @@ export default defineBackground(() => {
   });
 
   // Right-click › Comment with Pinpoint: open the panel (only allowed right now, in the click),
-  // then leave the request for it.
+  // then ask it to start selecting. A comment always starts with the reviewer's own selection.
   browser.contextMenus.onClicked.addListener((info, tab) => {
-    if (info.menuItemId !== 'pinpoint-comment' || !tab?.id || !tab.windowId) return;
+    if (info.menuItemId !== 'pinpoint-comment' || !tab?.windowId) return;
     void browser.sidePanel.open({ windowId: tab.windowId }).catch(() => {});
-    const request: ContextCommentRequest = { tabId: tab.id, at: Date.now() };
+    const request: ContextCommentRequest = { at: Date.now() };
     void browser.storage.session.set({ [CONTEXT_COMMENT_KEY]: request });
   });
 

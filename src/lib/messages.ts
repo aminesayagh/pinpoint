@@ -25,7 +25,6 @@ export interface PageContext {
 export type ToPage =
   | { type: 'pinpoint:select-start' }
   | { type: 'pinpoint:select-stop' }
-  | { type: 'pinpoint:select-right-clicked' } // answers false if there is no element to select
   | { type: 'pinpoint:compose' } // floating comment box next to the selected element
   | { type: 'pinpoint:compose-close' }
   | { type: 'pinpoint:ping' };
@@ -44,7 +43,6 @@ export type FromPage =
  */
 export const CONTEXT_COMMENT_KEY = 'pinpoint_context_comment';
 export interface ContextCommentRequest {
-  tabId: number;
   at: number;
 }
 

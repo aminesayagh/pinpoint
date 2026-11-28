@@ -22,8 +22,6 @@ export default defineContentScript({
         composer.open(() => el.getBoundingClientRect());
       }
       if (m.type === 'pinpoint:compose-close') composer.close();
-      if (m.type === 'pinpoint:select-right-clicked')
-        return void reply(picker.selectRightClicked());
       reply(true); // ack, so the side panel knows the script is here
     });
   },
